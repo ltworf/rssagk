@@ -68,20 +68,20 @@ class feed_item:
         
         #Converting escape chars
         while data.find('&#')!=-1:
-            print "===\n",data
+            print ">===\n"
             
-            s=data.find('&#')
+            s=data.find('&#')+2
             e=data[s:].find(';')
-            if e>5 or e<0:
+            print s,e
+            if e>6 or e<0:
                 break
             #print "----",data[s:e]
             #print data[0:s]
             #print data
-            print s,e
-            code=data[s+2:s+e].strip()
-            
-            data=data[0:s+2] + chr(int(code)) + data[e+1:]
-        
+            code=data[s:s+e].strip()
+            print 
+            data=data[0:s] + unichr(int(code)) + data[e+1:]
+            print "<===\n\n\n"
         return data
         
     def get_description(self):
@@ -104,7 +104,16 @@ class feed_item:
 import urllib2
 response = urllib2.urlopen('http://supersalvus.altervista.org/rss.php')
 #response = urllib2.urlopen('http://www.ft.com/rss/companies/technology')
+#response = urllib2.urlopen('http://www.uaar.it/news/feed/')
 html = response.read()
+
+#find encoding
+enc_s=html[0:html.find('\n')].find('encoding="')+10
+enc_e=html[enc_s:html.find('\n')].find('"')
+encoding=html[enc_s:enc_s+enc_e]
+
+#
+html=html.decode(encoding)
 
 while html.find('<item')>=0:
     start_item=html.find('<item')
