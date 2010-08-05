@@ -23,8 +23,6 @@ class feed_item:
     def __init__(self,item):
         self.raw=item
         
-        print item
-        
         self.title=self._get_tag_content('title')
         self.description=self._get_tag_content('description')
         self.author=self._get_tag_content('author')
@@ -32,15 +30,59 @@ class feed_item:
         self.comments=self._get_tag_content('comments')
         self.enclosure=self._get_tag_content('enclosure')
         self.pubDate=self._get_tag_content('pubDate')
-        self.source=self._get_tag_content('source')
-        
+        self.source=self._get_tag_content('source')        
         self.link=self._get_tag_content('link')        
         self.guid=self._get_tag_content('guid')
+        
+        #Setting link for the item
         if self.link == None and self.guid!=None and self.raw.find('guid isPermaLink="true"')>=0:
             self.link=self.guid
         
+        #Converts description into text
+        self.description=self._de_html(self.description)
         
+        print self.description
         
+    def _de_html(self,data):
+        if data==None:
+            return None
+            
+        #Removing the CDATA tag around the description
+        if data.startswith('<![CDATA[') and data.endswith(']]>'):
+            data=data[9:-3]
+        
+        #Replacing some tags into text
+        data=data.replace('<br>','\n')
+        data=data.replace('<br/>','\n')
+        data=data.replace('<br />','\n')
+        data=data.replace('<hr>','---')
+        data=data.replace('<hr/>','---')
+        data=data.replace('<hr />','---')
+        data=data.replace('</p>','</p>\n')
+        
+        #Removing tags and using their text
+        while data.find('<')!=-1:
+            s=data.find('<')
+            e=data.find('>')
+            data=data[0:s] + data[e+1:]
+        
+        #Converting escape chars
+        while data.find('&#')!=-1:
+            print "===\n",data
+            
+            s=data.find('&#')
+            e=data[s:].find(';')
+            if e>5 or e<0:
+                break
+            #print "----",data[s:e]
+            #print data[0:s]
+            #print data
+            print s,e
+            code=data[s+2:s+e].strip()
+            
+            data=data[0:s+2] + chr(int(code)) + data[e+1:]
+        
+        return data
         
     def get_description(self):
         pass
@@ -60,8 +102,8 @@ class feed_item:
 
 
 import urllib2
-#response = urllib2.urlopen('http://supersalvus.altervista.org/rss.php')
-response = urllib2.urlopen('http://www.ft.com/rss/companies/technology')
+response = urllib2.urlopen('http://supersalvus.altervista.org/rss.php')
+#response = urllib2.urlopen('http://www.ft.com/rss/companies/technology')
 html = response.read()
 
 while html.find('<item')>=0:
