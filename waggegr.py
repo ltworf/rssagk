@@ -25,12 +25,29 @@ def wget(url):
         return None
     
     #Remove protocol part
-    url=url[8:]
+    url=url[7:]
     
+    #split GET and domain
+    t=url.split('/',1)
     
+    #TODO handle IPv6 addresses
+    m=t[0].split(':',1)
+    if len(m)==1:
+        host=m[0]
+        port=80
+    else:
+        host=m[0]
+        try:
+            port=int(m[1])
+        except:
+            port=80
     
-    
-wget ('http://ciao.com:8080/index.rss')
+    if len(t)>1:
+        get='/' + t[1]
+    else:
+        get='/'
+        
+
 
 '''ap_id=socket.select_access_point()
 ap=socket.access_point(ap_id)
@@ -52,3 +69,5 @@ sock.close()
 #Release access point
 ap.stop()
 '''
+
+wget ('http://ciao.com/')
