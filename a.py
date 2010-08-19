@@ -20,6 +20,7 @@
 import appuifw
 import e32
 import socket
+import sys
 
 def wget(url,ap_id=None):
     '''Downloads a web resource with the HTTP protocol
@@ -197,7 +198,8 @@ class feed:
             try:
                 html=unicode(html,encoding)#html.decode(encoding)
             except:
-                print "NO MODULE FOR ", encoding
+                print "NO MODULE FOR '%s'"% encoding
+                sys.exit(1)
 
         while html.find('<item')>=0:
             start_item=html.find('<item')
@@ -227,11 +229,11 @@ class feed:
         '''Returns a list of articles'''
         articles=[]
         for i in self.items:
-            if len(i.title)>20:
-                t=i.title[0:18]
+            if len(i.title)>30:
+                t=i.title[0:30]
             else:
                 t=i.title
-            articles.append(str(t))
+            articles.append(t)
         if len(articles)==0:
             articles.append(u'No items...')
         return articles
@@ -246,7 +248,7 @@ class global_vars:
 feeds=[]
 feeds.append(feed(u'http://www.ft.com/rss/companies/technology'))
 feeds.append(feed(u'http://supersalvus.altervista.org/rss.php'))
-feeds.append(feed(u'http://www.uaar.it/news/feed/'))
+#feeds.append(feed(u'http://www.uaar.it/news/feed/'))
 
 gvars=global_vars()
 
