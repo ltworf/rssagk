@@ -83,8 +83,9 @@ def wget(url,ap_id=None):
     ap.stop()
     
     #TODO Server didn't return ok
-    #if not data.startswith('2'):
-    #    return None
+    if data[9:12]!='200':
+        show_popup(u'Server returned %s instead of 200' % data[9:12])
+        return None
     
     return data.split('\r\n\r\n',1)[1]
 
@@ -134,7 +135,6 @@ class feed_item:
             s=data.find('<')
             e=data.find('>')
             data=data[0:s] + data[e+1:]
-        
 
         
         #Converting escape chars
@@ -229,10 +229,16 @@ class feed:
         '''Returns a list of articles'''
         articles=[]
         for i in self.items:
+            
+            #Cuts too long names
             if len(i.title)>30:
                 t=i.title[0:30]
             else:
                 t=i.title
+                
+            #Adds a trailing * for unread articles
+            if i.read:
+                t='*%s'%t
             articles.append(t)
         if len(articles)==0:
             articles.append(u'No items...')
@@ -243,6 +249,7 @@ class feed:
 class global_vars:
     def __init__(self):
         self.current_feed=0
+        self.current_article=0
         self.view_state=0 #0 is list of feeds, 1 is list of news and 2 is text of the new
 
 feeds=[]
@@ -276,8 +283,11 @@ def list_click():
         update_view()
     elif gvars.view_state==0 and len(feeds)==0:
         add_feed()
-#    elif gvars.view_state==1:
-#        pass
+    elif gvars.view_state==1: #Goes to state 2 to read the article
+        gvars.current_article=main_list.current() #Sets the index for the current article
+        feeds[gvars.current_feed].items[gvars.current_article].read=True #Marks the article as read
+        gvars.view_state=2
+        update_view()
 #    elif gvars.view_state==2:
 #        pass
 
@@ -321,8 +331,19 @@ def update_view():
     '''Updates the current view, depending on the current view state'''
     if gvars.view_state==0:
         main_list.set_list(get_feeds_entries())
-    if gvars.view_state==1:
+    elif gvars.view_state==1:
         main_list.set_list(feeds[gvars.current_feed].get_articles())
+        appuifw.app.body=main_list #Sets this in case we are coming back from state 2
+    elif gvars.view_state==2:
+        article=feeds[gvars.current_feed].items[gvars.current_article]
+        #self.source=self._get_tag_content('source')        
+        #self.link=self._get_tag_content('link')        
+        #self.guid=self._get_tag_content('guid')
+        
+        main_txt.set('%s\n---------%s\n%s\n%s\n' %(article.title,article.author,article.description,article.pubDate))
+        main_txt.set_pos(0)
+        appuifw.app.body=main_txt
+        
 
 def init_menu():
     appuifw.app.menu = [(u"Options",(
@@ -347,7 +368,7 @@ app.screen='normal'
 
 # create your content list of your listbox including the icons to be used for each entry
 main_list = appuifw.Listbox(get_feeds_entries(),list_click)
-
+main_txt = appuifw.Text()
 
 # create an instance of appuifw.Listbox(), include the content list "entries" and the callback function "shout"
 # and set the instance of Listbox now as the application body
