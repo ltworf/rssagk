@@ -59,10 +59,6 @@ def wget(url,ap_id=None):
         hname+=":%d" % port
     
     #Download the file
-    if ap_id==None:
-        ap_id=socket.select_access_point()
-    ap=socket.access_point(ap_id)
-    #socket.set_default_access_point(ap)
     sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
     sock.connect((host,port))
@@ -80,7 +76,7 @@ def wget(url,ap_id=None):
     sock.close()
 
     #Release access point
-    ap.stop()
+    #ap.stop()
     
     #TODO Server didn't return ok
     if data[9:12]!='200':
@@ -136,7 +132,16 @@ class feed_item:
             e=data.find('>')
             data=data[0:s] + data[e+1:]
 
-        
+        data=data.replace(u"&nbsp;",u" ")
+        data=data.replace(u"&quot;",u"\"")
+        data=data.replace(u"&amp;",u"&")
+        data=data.replace(u"&lt;",u"<")
+        data=data.replace(u"&gt;",u">")
+        data=data.replace(u"&brvbar;",u"¦")
+        data=data.replace(u"&sect;",u"§")
+        data=data.replace(u"&pound;",u"£")
+        data=data.replace(u"&acute;",u"´")
+
         #Converting escape chars
         while data.find('&#')!=-1:
             s=data.find('&#')+2
@@ -163,11 +168,21 @@ class feed_item:
 
 class feed:
     def __init__(self,url):
-        self.title=url #TODO TEMPORARY
+        self.title=url.split("/")[2]
         self.url=url
         self.items=[]
         
         self.update_feed()
+    def _get_tag_content(self,tag):
+        '''Gets the content of a tag'''
+        start_item=self.raw.find('<%s' % tag)
+        end_start_item=self.raw[start_item:].find('>')
+        end_item=self.raw[start_item:].find('</%s>' % tag)
+
+        if start_item>=0 and end_start_item>=0 and end_item>=0:
+            return self.raw[1+start_item+end_start_item:start_item+end_item]
+        else:
+            return ''
 
     def update_feed(self):
         try:
@@ -201,6 +216,9 @@ class feed:
                 print "NO MODULE FOR '%s'"% encoding
                 sys.exit(1)
 
+        #Used to keep all the html which is not into items
+        preitems=html[0:html.find('<item')]
+        
         while html.find('<item')>=0:
             start_item=html.find('<item')
             end_start_item=html[start_item:].find('>')
@@ -211,6 +229,11 @@ class feed:
             html=html[start_item+end_item:] 
             #adds item
             self.items.append(feed_item(item))
+        
+        self.raw=preitems+html
+        title=self._get_tag_content('title')
+        if title!='':
+            self.title=title
         
     def get_unread(self):
         '''Returns the amount of unread items'''
@@ -223,7 +246,7 @@ class feed:
     def get_title(self):
         '''Returns the title of the feed'''
         #TODO
-        return self.url.split("/")[2]
+        return self.title
         
     def get_articles(self):
         '''Returns a list of articles'''
@@ -252,12 +275,21 @@ class global_vars:
         self.current_article=0
         self.view_state=0 #0 is list of feeds, 1 is list of news and 2 is text of the new
 
+
+ap_id=socket.select_access_point()
+ap=socket.access_point(ap_id)
+socket.set_default_access_point(ap)
+
+gvars=global_vars()
+
 feeds=[]
 feeds.append(feed(u'http://www.ft.com/rss/companies/technology'))
 feeds.append(feed(u'http://supersalvus.altervista.org/rss.php'))
+feeds.append(feed(u'http://feeds.feedburner.com/Spinoza'))
+feeds.append(feed(u'http://twitter.com/statuses/user_timeline/41667342.rss'))
 #feeds.append(feed(u'http://www.uaar.it/news/feed/'))
 
-gvars=global_vars()
+
 
 def do_nothing():
     '''This function does nothing'''

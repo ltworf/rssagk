@@ -67,19 +67,11 @@ class feed_item:
             data=data[0:s] + data[e+1:]
             
             
-        data=data.replace(u"&euro;",u"€")
-        data=data.replace(u"&nbsp;",u" ")
-        data=data.replace(u"&quot;",u"\"")
-        data=data.replace(u"&amp;",u"&")
-        data=data.replace(u"&lt;",u"<")
-        data=data.replace(u"&gt;",u">")
+        data=data.replace(u"&euro;",u"€")       
         data=data.replace(u"&iexcl;",u"¡")
         data=data.replace(u"&cent;",u"¢")
-        data=data.replace(u"&pound;",u"£")
         data=data.replace(u"&curren;",u"¤")
         data=data.replace(u"&yen;",u"¥")
-        data=data.replace(u"&brvbar;",u"¦")
-        data=data.replace(u"&sect;",u"§")
         data=data.replace(u"&uml;",u"¨")
         data=data.replace(u"&copy;",u"©")
         data=data.replace(u"&ordf;",u"ª")
@@ -90,7 +82,6 @@ class feed_item:
         data=data.replace(u"&plusmn;",u"±")
         data=data.replace(u"&sup2;",u"²")
         data=data.replace(u"&sup3;",u"³")
-        data=data.replace(u"&acute;",u"´")
         data=data.replace(u"&micro;",u"µ")
         data=data.replace(u"&para;",u"¶")
         data=data.replace(u"&middot;",u"·")
