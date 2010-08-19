@@ -159,7 +159,7 @@ class feed_item:
         if start_item>=0 and end_start_item>=0 and end_item>=0:
             return self.raw[1+start_item+end_start_item:start_item+end_item]
         else:
-            return None
+            return ''
 
 class feed:
     def __init__(self,url):
@@ -175,7 +175,7 @@ class feed:
         except:
             return
 
-        if html==None:
+        if html==None or html=='':
             show_popup(u"Unable to fetch the feed %s"%self.title)
             return
         
@@ -237,7 +237,7 @@ class feed:
                 t=i.title
                 
             #Adds a trailing * for unread articles
-            if i.read:
+            if i.read==False:
                 t='*%s'%t
             articles.append(t)
         if len(articles)==0:
@@ -283,6 +283,8 @@ def list_click():
         update_view()
     elif gvars.view_state==0 and len(feeds)==0:
         add_feed()
+    elif gvars.view_state==1 and len(feeds[gvars.current_feed].items)==0:
+        pass #There is only a placeholder item that shows that there aren't items
     elif gvars.view_state==1: #Goes to state 2 to read the article
         gvars.current_article=main_list.current() #Sets the index for the current article
         feeds[gvars.current_feed].items[gvars.current_article].read=True #Marks the article as read
@@ -339,8 +341,7 @@ def update_view():
         #self.source=self._get_tag_content('source')        
         #self.link=self._get_tag_content('link')        
         #self.guid=self._get_tag_content('guid')
-        
-        main_txt.set('%s\n---------%s\n%s\n%s\n' %(article.title,article.author,article.description,article.pubDate))
+        main_txt.set('%s\n---------\n%s\n\n%s\n%s' %(article.title,article.description,article.author,article.pubDate))
         main_txt.set_pos(0)
         appuifw.app.body=main_txt
         
