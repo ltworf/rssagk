@@ -169,20 +169,12 @@ class feed_item:
         
         #Converting escape chars
         while data.find('&#')!=-1:
-            print ">===\n"
-            
             s=data.find('&#')+2
             e=data[s:].find(';')
-            print s,e
             if e>6 or e<0:
                 break
-            #print "----",data[s:e]
-            #print data[0:s]
-            #print data
             code=data[s:s+e].strip()
-            print 
-            data=data[0:s] + unichr(int(code)) + data[e+1:]
-            print "<===\n\n\n"
+            data=data[0:s-2] + unichr(int(code)) + data[s+e+1:]
         return data
         
     def get_description(self):
@@ -227,3 +219,106 @@ while html.find('<item')>=0:
     #print item
     print feed_item(item)
     print
+
+
+
+        '''
+        data=data.replace(u"&euro;",u"€")
+        data=data.replace(u"&nbsp;",u" ")
+        data=data.replace(u"&amp;",u"&")
+        data=data.replace(u"&quot;",u"\"")
+        data=data.replace(u"&lt;",u"<")
+        data=data.replace(u"&gt;",u">")
+        data=data.replace(u"&iexcl;",u"¡")
+        data=data.replace(u"&cent;",u"¢")
+        data=data.replace(u"&pound;",u"£")
+        data=data.replace(u"&curren;",u"¤")
+        data=data.replace(u"&yen;",u"¥")
+        data=data.replace(u"&brvbar;",u"¦")
+        data=data.replace(u"&sect;",u"§")
+        data=data.replace(u"&uml;",u"¨")
+        data=data.replace(u"&copy;",u"©")
+        data=data.replace(u"&ordf;",u"ª")
+        data=data.replace(u"&not;",u"¬")
+        data=data.replace(u"&reg;",u"®")
+        data=data.replace(u"&macr;",u"¯")
+        data=data.replace(u"&deg;",u"°")
+        data=data.replace(u"&plusmn;",u"±")
+        data=data.replace(u"&sup2;",u"²")
+        data=data.replace(u"&sup3;",u"³")
+        data=data.replace(u"&acute;",u"´")
+        data=data.replace(u"&micro;",u"µ")
+        data=data.replace(u"&para;",u"¶")
+        data=data.replace(u"&middot;",u"·")
+        data=data.replace(u"&cedil;",u"¸")
+        data=data.replace(u"&sup1;",u"¹")
+        data=data.replace(u"&ordm;",u"º")
+        data=data.replace(u"&raquo;",u"»")
+        data=data.replace(u"&frac14;",u"¼")
+        data=data.replace(u"&frac12;",u"½")
+        data=data.replace(u"&frac34;",u"¾")
+        data=data.replace(u"&iquest;",u"¿")
+        data=data.replace(u"&Agrave;",u"À")
+        data=data.replace(u"&Aacute;",u"Á")
+        data=data.replace(u"&Acirc;",u"Â")
+        data=data.replace(u"&Atilde;",u"Ã")
+        data=data.replace(u"&Auml;",u"Ä")
+        data=data.replace(u"&Aring;",u"Å")
+        data=data.replace(u"&AElig;",u"Æ")
+        data=data.replace(u"&Ccedil;",u"Ç")
+        data=data.replace(u"&Egrave;",u"È")
+        data=data.replace(u"&Eacute;",u"É")
+        data=data.replace(u"&Ecirc;",u"Ê")
+        data=data.replace(u"&Euml;",u"Ë")
+        data=data.replace(u"&Igrave;",u"Ì")
+        data=data.replace(u"&Iacute;",u"Í")
+        data=data.replace(u"&Icirc;",u"Î")
+        data=data.replace(u"&Iuml;",u"Ï")
+        data=data.replace(u"&ETH;",u"Ð")
+        data=data.replace(u"&Ntilde;",u"Ñ")
+        data=data.replace(u"&Ograve;",u"Ò")
+        data=data.replace(u"&Oacute;",u"Ó")
+        data=data.replace(u"&Ocirc;",u"Ô")
+        data=data.replace(u"&Otilde;",u"Õ")
+        data=data.replace(u"&Ouml;",u"Ö")
+        data=data.replace(u"&times;",u"×")
+        data=data.replace(u"&Oslash;",u"Ø")
+        data=data.replace(u"&Ugrave;",u"Ù")
+        data=data.replace(u"&Uacute;",u"Ú")
+        data=data.replace(u"&Ucirc;",u"Û")
+        data=data.replace(u"&Uuml;",u"Ü")
+        data=data.replace(u"&Yacute;",u"Ý")
+        data=data.replace(u"&THORN;",u"Þ")
+        data=data.replace(u"&szlig;",u"ß")
+        data=data.replace(u"&agrave;",u"à")
+        data=data.replace(u"&aacute;",u"á")
+        data=data.replace(u"&acirc;",u"â")
+        data=data.replace(u"&atilde;",u"ã")
+        data=data.replace(u"&auml;",u"ä")
+        data=data.replace(u"&aring;",u"å")
+        data=data.replace(u"&aelig;",u"æ")
+        data=data.replace(u"&ccedil;",u"ç")
+        data=data.replace(u"&egrave;",u"è")
+        data=data.replace(u"&eacute;",u"é")
+        data=data.replace(u"&ecirc;",u"ê")
+        data=data.replace(u"&euml;",u"ë")
+        data=data.replace(u"&igrave;",u"ì")
+        data=data.replace(u"&iacute;",u"í")
+        data=data.replace(u"&icirc;",u"î")
+        data=data.replace(u"&iuml;",u"ï")
+        data=data.replace(u"&eth;",u"ð")
+        data=data.replace(u"&ntilde;",u"ñ")
+        data=data.replace(u"&ograve;",u"ò")
+        data=data.replace(u"&oacute;",u"ó")
+        data=data.replace(u"&ocirc;",u"ô")
+        data=data.replace(u"&otilde;",u"õ")
+        data=data.replace(u"&ouml;",u"ö")
+        data=data.replace(u"&divide;",u"÷")
+        data=data.replace(u"&oslash;",u"ø")
+        data=data.replace(u"&ugrave;",u"ù")
+        data=data.replace(u"&uacute;",u"ú")
+        data=data.replace(u"&ucirc;",u"û")
+        data=data.replace(u"&uuml;",u"ü")
+        data=data.replace(u"&yacute;",u"ý")
+        data=data.replace(u"&thorn;",u"þ")
+        '''

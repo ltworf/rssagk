@@ -20,7 +20,13 @@
 
 import socket
 
-def wget(url):
+def wget(url,ap_id=None):
+    '''Downloads a web resource with the HTTP protocol
+    and returns the result
+    
+    ap_id is the access point to use.
+    If it is None, the user will be prompted'''
+    
     if not url.startswith('http://'):
         return None
     
@@ -47,27 +53,33 @@ def wget(url):
     else:
         get='/'
         
+    hname=host
+    if port!=80:
+        hname+=":%d" % port
+    
+    #Download the file
+    if ap_id==None:
+        ap_id=socket.select_access_point()
+    ap=socket.access_point(ap_id)
+    #socket.set_default_access_point(ap)
+    sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
+    sock.connect((host,port))
+    sock.send("GET %s HTTP/1.1\r\nConnection: close\r\nHost: %s\r\nUser-Agent: RSS-agk\r\n\r\n" % (get,hname))
+    
+    data=''
+    while True:
+        r=sock.read(4000)
+        if len(r)==0:
+            break
+        data+=r
+    
+    
+    sock.close()
 
-'''ap_id=socket.select_access_point()
-ap=socket.access_point(ap_id)
+    #Release access point
+    ap.stop()
+    
+    return data.split('\r\n\r\n',1)[1]
 
-socket.set_default_access_point(ap)
-
-
-sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-print ap.ip()
-
-sock.connect(('www.sourceforge.net',80))
-sock.send("GET / HTTP/0.9\r\n\r\n")
-#print sock.recv(100)
-#print dir(sock)
-print sock.read(100)
-
-sock.close()
-
-#Release access point
-ap.stop()
-'''
-
-wget ('http://ciao.com/')
+print wget ('http://10.50:8080/film/altri/')
