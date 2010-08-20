@@ -89,6 +89,20 @@ def wget(url,ap_id=None):
 
 class feed_item:
     def __init__(self,item):
+        if item==None:
+            self.read=None
+            self.title=None
+            self.description=None
+            self.author=None
+            self.category=None
+            self.comments=None
+            self.enclosure=None
+            self.pubDate=None
+            self.source=None
+            self.link=None
+            self.guid=None
+            return
+        
         self.raw=item
         
         self.read=False
@@ -148,9 +162,6 @@ class feed_item:
             data=data[0:s-2] + unichr(int(code)) + data[s+e+1:]
         return data
         
-    def get_description(self):
-        pass
-    
     def _get_tag_content(self,tag):
         '''Gets the content of a tag'''
         start_item=self.raw.find('<%s' % tag)
@@ -166,6 +177,7 @@ class feed:
     def __init__(self,url):
         self.title=url.split("/")[2]
         self.url=url
+        self.link=''
         self.items=[]
         
         self.update_feed()
@@ -230,6 +242,7 @@ class feed:
         title=self._get_tag_content('title')
         if title!='':
             self.title=title
+        self.link=self._get_tag_content('link')
         
     def get_unread(self):
         '''Returns the amount of unread items'''
@@ -390,7 +403,7 @@ def open_in_browser():
     url=''
     
     if gvars.view_state==0 and len(feeds)>0: 
-        url=feeds[main_list.current()].url
+        url=feeds[main_list.current()].link
     elif (gvars.view_state==1 and len(feeds[gvars.current_feed].items)>0) or gvars.view_state==2:
         article=feeds[gvars.current_feed].items[gvars.current_article]
         url=article.link
