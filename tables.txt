@@ -1,0 +1,74 @@
+items (id,feed_id,read,title,description,author,category,comments,enclosure,pubDate,source,link,guid)
+feeds (id, url, title, link)
+
+#Create tables
+u"CREATE TABLE feeds (id counter, UNIQUE url VARCHAR, title VARCHAR,link VARCHAR);"
+u"CREATE TABLE items (id counter,feed_id INTEGER,read,title VARCHAR,description VARCHAR,author VARCHAR,category VARCHAR,comments VARCHAR,enclosure VARCHAR,pubDate VARCHAR,source VARCHAR,link VARCHAR,guid VARCHAR);"
+
+# Working Example for using e32db, 
+# Oct 2009
+# based on examples from
+# http://wiki.forum.nokia.com/index.php/Complete_SQL_Database_Guide_for_PyS60
+# and 
+# http://wiki.forum.nokia.com/index.php/Database_in_PyS60
+# Tested on Nokia N95, S60 3rd edition FP2 
+ 
+import e32db,sys,traceback
+ 
+#initiate db access
+db=e32db.Dbms()
+dbv=e32db.Db_view()
+ 
+# name of the database file
+dbname = u'e:\\python\\testdatabase.db'
+ 
+#open database, if it does not exist, then create it
+try:
+  db.open(dbname)
+except:
+  db.create(dbname)
+  db.open(dbname)
+ 
+ 
+#Create the database table
+try:
+  # note that the id field is auto-incremented when new rows are added
+  db.execute(u"CREATE TABLE test_table (id counter, forename VARCHAR, surname VARCHAR)")
+  print "Table Created"
+except SymbianError:
+  print "Error Creating table: "
+  #print traceback.format_exception(*sys.exc_info())
+  print sys.exc_info()[0]
+  print sys.exc_info()[1]
+  print sys.exc_info()[2]
+ 
+# attempt to insert data
+try:
+  # note that the id field is NOT required, as it auto-increments 
+  db.execute(u"INSERT INTO test_table (forename, surname) VALUES('joe','bloggs')")
+  print "Data Inserted"
+except SymbianError:
+  print "Could not insert data: ", SymbianError.args
+  print sys.exc_info()[0]
+  print sys.exc_info()[1]
+  print sys.exc_info()[2]
+ 
+ 
+ 
+ 
+#to fetch the whole dataset
+try:
+  dbv.prepare(db,u'SELECT * FROM test_table')
+  for i in range(1,dbv.count_line()+1): #1 to number of rows
+    dbv.get_line() #grabs the current row
+    for i in range(1,dbv.col_count()+1):
+      print dbv.col(i) #prints each column data
+    dbv.next_line() #move to the next rowset[[Category:Entertainment]]
+except SymbianError:
+  print "failed to read database: "
+  print sys.exc_info()[0]
+  print sys.exc_info()[1]
+  print sys.exc_info()[2]
+ 
+# close the database
+db.close()

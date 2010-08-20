@@ -21,6 +21,7 @@ import appuifw
 import e32
 import socket
 import sys
+import e32db
 
 html_escape_repl={'&Ecirc;': u'\xca', '&raquo;': u'\xbb', '&eth;': u'\xf0', '&divide;': u'\xf7', '&atilde;': u'\xe3','&sup1;': u'\xb9', '&THORN;': u'\xde', '&ETH;': u'\xd0', '&frac34;': u'\xbe', '&nbsp;': u',', '&Auml;': u'\xc4', '&Ouml;': u'\xd6', '&Egrave;': u'\xc8', '&acute;': u'\xb4', '&Icirc;': u'\xce', '&deg;': u'\xb0', '&middot;': u'\xb7', '&ocirc;': u'\xf4', '&Ugrave;': u'\xd9', '&gt;': u'>', '&ordf;': u'\xaa', '&uml;': u'\xa8', '&aring;': u'\xe5', '&frac12;': u'\xbd', '&iexcl;': u'\xa1', '&frac14;': u'\xbc', '&Aacute;': u'\xc1', '&szlig;': u'\xdf', '&igrave;': u'\xec', '&aelig;': u'\xe6', '&yen;': u'\xa5', '&times;': u'\xd7', '&para;': u'\xb6', '&oacute;': u'\xf3', '&Igrave;': u'\xcc', '&ucirc;': u'\xfb', '&brvbar;': u'\xa6', '&micro;': u'\xb5', '&agrave;': u'\xe0', '&thorn;': u'\xfe', '&Ucirc;': u'\xdb', '&amp;': u'&', '&uuml;': u'\xfc', '&ecirc;': u'\xea', '&not;': u'\xac', '&Ograve;': u'\xd2', '&oslash;': u'\xf8', '&Uuml;': u'\xdc', '&cedil;': u'\xb8', '&plusmn;': u'\xb1', '&AElig;': u'\xc6', '&icirc;': u'\xee', '&auml;': u'\xe4', '&ouml;': u'\xf6', '&Ccedil;': u'\xc7', '&euml;': u'\xeb', '&lt;': u'<', '&iquest;': u'\xbf', '&eacute;': u'\xe9', '&ntilde;': u'\xf1', '&pound;': u'\xa3', '&Iuml;': u'\xcf', '&Eacute;': u'\xc9', '&Ntilde;': u'\xd1', '&euro;': u'\u20ac', '&sup2;': u'\xb2', '&Acirc;': u'\xc2', '&ccedil;': u'\xe7', '&Iacute;': u'\xcd', '&quot;': u'"', '&Aring;': u'\xc5', '&macr;': u'\xaf', '&ordm;': u'\xba', '&Oslash;': u'\xd8', '&Otilde;': u'\xd5', '&Ocirc;': u'\xd4', '&reg;': u'\xae', '&Yacute;': u'\xdd', '&iuml;': u'\xef', '&ugrave;': u'\xf9', '&sup3;': u'\xb3', '&curren;': u'\xa4', '&copy;': u'\xa9', '&Atilde;': u'\xc3', '&egrave;': u'\xe8', '&Euml;': u'\xcb', '&uacute;': u'\xfa', '&ograve;': u'\xf2', '&acirc;': u'\xe2', '&aacute;': u'\xe1', '&Agrave;': u'\xc0', '&Oacute;': u'\xd3', '&sect;': u'\xa7', '&yacute;': u'\xfd', '&iacute;': u'\xed', '&cent;': u'\xa2', '&Uacute;': u'\xda', '&otilde;': u'\xf5'}
 
@@ -175,10 +176,18 @@ class feed_item:
 
 class feed:
     def __init__(self,url):
+        self.items=[]
+        
+        #Constructor for empty feed
+        if url==None:
+            self.url=None
+            self.title=None
+            self.link=None
+            return
         self.title=url.split("/")[2]
         self.url=url
         self.link=''
-        self.items=[]
+        
         
         self.update_feed()
     def _get_tag_content(self,tag):
@@ -283,14 +292,88 @@ class global_vars:
         self.current_article=0
         self.view_state=0 #0 is list of feeds, 1 is list of news and 2 is text of the new
 
+class global_db:
+    def __init__(self):
+        # name of the database file
+        self.dbname = u'e:\\Python\\rss.db'
+        
+        self.db=e32db.Dbms()
+        self.dbv=e32db.Db_view()
+
+ 
+        #open database, if it does not exist, then create it
+        try:
+            self.db.open(self.dbname)
+        except:
+            self.db.create(self.dbname)
+            self.db.open(self.dbname)
+ 
+ 
+        #Create the database table
+        try:
+            self.db.execute(u"CREATE TABLE feeds (id counter, url VARCHAR, title VARCHAR,link VARCHAR)")
+            self.db.execute(u"CREATE TABLE items (id counter,feed_id INTEGER,read INTEGER,title VARCHAR,description VARCHAR,author VARCHAR,category VARCHAR,comments VARCHAR,enclosure VARCHAR,pubDate VARCHAR,source VARCHAR,link VARCHAR,guid VARCHAR)")
+            print "Table Created"
+        except SymbianError:
+            print "Error Creating table: "
+            #print traceback.format_exception(*sys.exc_info())
+            print sys.exc_info()[0]
+            print sys.exc_info()[1]
+            print sys.exc_info()[2]
+        self.load_feed()
+        
+    def close(self):
+        '''Closes the db'''
+        self.db.close()
+    def load_feed(self):
+        '''Loads the feeds and puts them into the feeds[] global'''
+        try:
+            self.dbv.prepare(self.db,u'SELECT * FROM feeds ORDER BY id')
+            for i in range(1,self.dbv.count_line()+1): #1 to number of rows
+                self.dbv.get_line() #grabs the current row
+                
+                
+                
+                #Create the feed
+                new_feed=feed(None)
+                
+                #Set the fields
+                #new_feed.id=self.dbv.col(1)
+                new_feed.url=self.dbv.col(2)
+                new_feed.title=self.dbv.col(3)
+                new_feed.link=self.dbv.col(4)
+                
+                #TODO insert articles
+                
+                feeds.append(new_feed)
+                
+                self.dbv.next_line() #move to the next rowset[[Category:Entertainment]]
+        except SymbianError:
+            print "failed to read database: "
+            print sys.exc_info()[0]
+            print sys.exc_info()[1]
+            print sys.exc_info()[2]
+        
+    def add_feed(self,new_feed):
+        '''Adds a feed into the db'''
+        self.db.execute(u"INSERT INTO feeds (url, title, link) VALUES('%s','%s','%s')" % (new_feed.url,new_feed.title,new_feed.link))
+    def del_feed(self,f,feed_id):
+        '''Deletes a feed from the db'''
+        self.db.execute(u"DELETE FROM feeds WHERE url='%s'" % f.url)
+        
+        #TODO delete items too
+
+#################################################### The order of those lines is IMPORTANT
+feeds=[]
 
 ap_id=socket.select_access_point()
 ap=socket.access_point(ap_id)
 socket.set_default_access_point(ap)
 
 gvars=global_vars()
+gdb=global_db()
 
-feeds=[]
+
 feeds.append(feed(u'http://www.ft.com/rss/companies/technology'))
 feeds.append(feed(u'http://supersalvus.altervista.org/rss.php'))
 feeds.append(feed(u'http://feeds.feedburner.com/Spinoza'))
@@ -320,6 +403,8 @@ def show_popup(text):
     appuifw.note(text, "info")
 
 def exit_key_handler():
+    '''Exits the application'''
+    gdb.close() #Closes the database
     app_lock.signal()
     
 def back_one_level():
@@ -362,9 +447,15 @@ def add_feed():
     if uri==None:
         return
         
+    #Doesn't add existing feeds    
+    for i in feeds:
+        if i.url==uri:
+            show_popup(u'Feed already imported')
+            return
     try:
         new_feed=feed(uri)
         feeds.append(new_feed)
+        gdb.add_feed(new_feed)
         update_view()
     except:
         show_popup(u'Unable to insert the feed')
@@ -378,6 +469,7 @@ def remove_feed():
     
     try:
         feeds.pop(index)
+        gdb.del_feed(feeds[index],index) #Deletes the feed from the db
         update_view()
     except:
         show_popup(u'Unable to remove the feed')
