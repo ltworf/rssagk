@@ -313,3 +313,15 @@ while html.find('<item')>=0:
         data=data.replace(u"&yacute;",u"ý")
         data=data.replace(u"&thorn;",u"þ")
         '''
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        a=(u'\u20ac', u',', u'&', u'"', u'<', u'>', u'\xa1', u'\xa2', u'\xa3', u'\xa4', u'\xa5', u'\xa6', u'\xa7', u'\xa8', u'\xa9', u'\xaa', u'\xac', u'\xae', u'\xaf', u'\xb0', u'\xb1', u'\xb2', u'\xb3', u'\xb4', u'\xb5', u'\xb6', u'\xb7', u'\xb8', u'\xb9', u'\xba', u'\xbb', u'\xbc', u'\xbd', u'\xbe', u'\xbf', u'\xc0', u'\xc1', u'\xc2', u'\xc3', u'\xc4', u'\xc5', u'\xc6', u'\xc7', u'\xc8', u'\xc9', u'\xca', u'\xcb', u'\xcc', u'\xcd', u'\xce', u'\xcf', u'\xd0', u'\xd1', u'\xd2', u'\xd3', u'\xd4', u'\xd5', u'\xd6', u'\xd7', u'\xd8', u'\xd9', u'\xda', u'\xdb', u'\xdc', u'\xdd', u'\xde', u'\xdf', u'\xe0', u'\xe1', u'\xe2', u'\xe3', u'\xe4', u'\xe5', u'\xe6', u'\xe7', u'\xe8', u'\xe9', u'\xea', u'\xeb', u'\xec', u'\xed', u'\xee', u'\xef', u'\xf0', u'\xf1', u'\xf2', u'\xf3', u'\xf4', u'\xf5', u'\xf6', u'\xf7', u'\xf8', u'\xf9', u'\xfa', u'\xfb', u'\xfc', u'\xfd', u'\xfe')
