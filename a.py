@@ -177,6 +177,7 @@ class feed_item:
 class feed:
     def __init__(self,url):
         self.items=[]
+        self.db_id=None
         
         #Constructor for empty feed
         if url==None:
@@ -338,7 +339,7 @@ class global_db:
                 new_feed=feed(None)
                 
                 #Set the fields
-                #new_feed.id=self.dbv.col(1)
+                new_feed.db_id=self.dbv.col(1)
                 new_feed.url=self.dbv.col(2)
                 new_feed.title=self.dbv.col(3)
                 new_feed.link=self.dbv.col(4)
@@ -357,7 +358,7 @@ class global_db:
     def add_feed(self,new_feed):
         '''Adds a feed into the db'''
         self.db.execute(u"INSERT INTO feeds (url, title, link) VALUES('%s','%s','%s')" % (new_feed.url,new_feed.title,new_feed.link))
-    def del_feed(self,f,feed_id):
+    def del_feed(self,f):
         '''Deletes a feed from the db'''
         self.db.execute(u"DELETE FROM feeds WHERE url='%s'" % f.url)
         
@@ -468,8 +469,8 @@ def remove_feed():
         gvars.view_state=0
     
     try:
+        gdb.del_feed(feeds[index]) #Deletes the feed from the db
         feeds.pop(index)
-        gdb.del_feed(feeds[index],index) #Deletes the feed from the db
         update_view()
     except:
         show_popup(u'Unable to remove the feed')
