@@ -241,7 +241,6 @@ class feed:
         
     def get_title(self):
         '''Returns the title of the feed'''
-        #TODO
         return self.title
         
     def get_articles(self):
@@ -285,6 +284,19 @@ feeds.append(feed(u'http://feeds.feedburner.com/Spinoza'))
 feeds.append(feed(u'http://twitter.com/statuses/user_timeline/41667342.rss'))
 #feeds.append(feed(u'http://www.uaar.it/news/feed/'))
 
+
+def open_link(url):
+    '''Opens a link in the external browser'''
+    
+    '''apprun = u'z:\\system\\programs\\apprun.exe'
+    browser = u'z:\\System\\Apps\\Browser\\Browser.app'
+    #url = 'http://www.google.com'
+    print url
+    e32.start_exe(apprun, browser + u' "%s"' %url , 1)'''
+    
+    browserApp ='BrowserNG.exe'
+    #url = 'www.google.com'
+    e32.start_exe(browserApp, ' "4 %s"' %url, 1)
 
 
 def do_nothing():
@@ -373,14 +385,46 @@ def update_view():
         main_txt.set_pos(0)
         appuifw.app.body=main_txt
         
+def open_in_browser():
+    '''Opens the selected item in an external browser'''
+    url=''
+    
+    if gvars.view_state==0 and len(feeds)>0: 
+        url=feeds[main_list.current()].url
+    elif (gvars.view_state==1 and len(feeds[gvars.current_feed].items)>0) or gvars.view_state==2:
+        article=feeds[gvars.current_feed].items[gvars.current_article]
+        url=article.link
+        article.read=True #Marks the article as read, even if viewed externally
+        if gvars.view_state==1: update_view() #Updates view in case we are listing the articles
+        
+    if url!='':
+        open_link(url)
+    else:
+        show_popup(u'Item doesn\'t provide any link')
+
+def mark_feed_read():
+    '''Marks the current feed as read'''
+    if len(feeds)==0: 
+        return
+    for i in feeds[main_list.current()].items:
+        i.read=True
+    update_view()
+
+def mark_all_feeds_read():
+    for f in feeds:
+        for i in f.items:
+            i.read=True
+    update_view()
 
 def init_menu():
     appuifw.app.menu = [(u"Options",(
-         
+        (u"View in browser", open_in_browser),
+        (u"Update feed", do_nothing),
+        (u"Update all feeds", do_nothing),
         (u"Add feed", add_feed),
         (u"Remove feed", remove_feed),
-        (u"Mark feed as read", do_nothing),
-        (u"Mark all feeds as read", do_nothing),
+        (u"Mark feed as read", mark_feed_read),
+        (u"Mark all feeds as read", mark_all_feeds_read),
         (u"About", about),
         (u"Exit", exit_key_handler),
         ))
@@ -388,7 +432,6 @@ def init_menu():
 
 def about():
     show_popup(u"RSS-agk by Salvo 'LtWorf' Tomaselli")
-
 
 app=appuifw.app
 app.title=u"RSS-agk"
@@ -410,7 +453,6 @@ init_menu()
 #(u"Remove feed", add_feed)))]
 
 appuifw.app.exit_key_handler = back_one_level
-
 
 # create an Active Object
 app_lock = e32.Ao_lock()
