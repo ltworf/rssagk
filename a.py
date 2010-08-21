@@ -92,6 +92,23 @@ def wget(url,ap_id=None):
 
 class feed_item:
     def __init__(self,item):
+        
+        #In case we are loading the item from a dictionary
+        if isinstance(item,dict):
+            self.raw=None
+            self.read=item['read']
+            self.title=item['title']
+            self.description=item['description']
+            self.author=item['author']
+            self.category=item['category']
+            self.comments=item['comments']
+            self.enclosure=item['enclosure']
+            self.pubDate=item['pubDate']
+            self.source=item['source']
+            self.link=item['link']
+            self.guid=item['guid']
+            return
+            
         self.raw=item
         
         self.read=False
@@ -113,7 +130,22 @@ class feed_item:
         #Converts description into text
         self.description=self._de_html(self.description)
         self.title=self._de_html(self.title)
-                
+    def to_dic(self):
+        '''Returns a dict that can be used to generate the object again'''
+        d={}
+        d['read']=self.read
+        d['title']=self.title
+        d['description']=self.description
+        d['author']=self.author
+        d['category']=self.category
+        d['comments']=self.comments
+        d['enclosure']=self.enclosure
+        d['pubDate']=self.pubDate
+        d['source']=self.source
+        d['link']=self.link
+        d['guid']=self.guid
+        return d
+        
     def _de_html(self,data):
         if data==None:
             return None
@@ -161,18 +193,45 @@ class feed_item:
             return self.raw[1+start_item+end_start_item:start_item+end_item]
         else:
             return ''
-
+    def __eq__(self,other):
+        '''Compares two items basing on their guid'''
+        if not isinstance(other,feed_item):
+            return False
+        return self.guid==other.guid
+        
 class feed:
     def __init__(self,url):
+        '''Inits a feed object.
+        Can accept a string containing an url or
+        a dictionary containing a stored feed object'''
+        
         self.items=[]
-        self.db_id=None
+        
+        if isinstance(url,dict):
+            self.url=url['url']
+            self.link=url['link']
+            self.title=url['title']
+            
+            for i in url['items']:
+                self.items.append(feed_item(i))
+            return
         
         self.title=url.split("/")[2]
         self.url=url
         self.link=''
         
-        
         self.update_feed()
+    def to_dic(self):
+        d={}
+        d['url']=self.url
+        d['link']=self.link
+        d['title']=self.title
+        itms=[]
+        for i in self.items:
+            itms.append(i.to_dic())
+        d['items']=itms
+        return d
+        
     def _get_tag_content(self,tag):
         '''Gets the content of a tag'''
         start_item=self.raw.find('<%s' % tag)
@@ -277,16 +336,27 @@ class global_vars:
 
 class global_db:
     def __init__(self):
-        pkl_file = open("E:\\Python\\Content.txt", 'rb')
-        p = pickle.load(pkl_file)
-        pkl_file.close()
+        try:
+            pkl_file = open("feed.dat", 'r')
+            f = pickle.load(pkl_file)
+            pkl_file.close()
+        except:
+            return
+        
+        for i in f:
+            feeds.append(feed(i))
         
     def close(self):
+        
+        f=[]
+        for i in feeds:
+            f.append(i.to_dic())
+        
         '''Closes the db'''
-        output = open("E:\\Python\\Content.txt", 'wb')
+        output = open("feed.dat", 'wb')
 
         # Pickle dictionary using protocol 0.
-        pickle.dump(feeds, output)
+        pickle.dump(f, output)
 
         output.close()
         
@@ -296,24 +366,6 @@ class global_db:
         pass
     def del_feed(self,f):
         pass
-
-#################################################### The order of those lines is IMPORTANT
-
-feeds=[]
-
-ap_id=btsocket.select_access_point() #Selects the access point and returns its id
-ap=btsocket.access_point(ap_id)      #Create the access point object
-btsocket.set_default_access_point(ap)
-
-gvars=global_vars()
-gdb=global_db()
-
-
-#feeds.append(feed(u'http://www.ft.com/rss/companies/technology'))
-#feeds.append(feed(u'http://supersalvus.altervista.org/rss.php'))
-#feeds.append(feed(u'http://feeds.feedburner.com/Spinoza'))
-#feeds.append(feed(u'http://twitter.com/statuses/user_timeline/41667342.rss'))
-#feeds.append(feed(u'http://www.uaar.it/news/feed/'))
 
 
 def open_link(url):
@@ -472,6 +524,36 @@ def init_menu():
 
 def about():
     show_popup(u"RSS-agk by Salvo 'LtWorf' Tomaselli")
+
+
+
+
+
+
+#################################################### The order of those lines is IMPORTANT
+
+feeds=[]
+
+ap_id=btsocket.select_access_point() #Selects the access point and returns its id
+ap=btsocket.access_point(ap_id)      #Create the access point object
+btsocket.set_default_access_point(ap)
+
+gvars=global_vars()
+gdb=global_db()
+
+
+#feeds.append(feed(u'http://www.ft.com/rss/companies/technology'))
+#feeds.append(feed(u'http://supersalvus.altervista.org/rss.php'))
+#feeds.append(feed(u'http://feeds.feedburner.com/Spinoza'))
+#feeds.append(feed(u'http://twitter.com/statuses/user_timeline/41667342.rss'))
+#feeds.append(feed(u'http://www.uaar.it/news/feed/'))
+
+
+
+
+
+
+
 
 app=appuifw.app
 app.title=u"RSS-agk"
