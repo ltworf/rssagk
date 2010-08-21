@@ -22,7 +22,7 @@ import e32
 import btsocket
 import sys
 import e32db
-import pickle
+import cPickle
 
 
 html_escape_repl={'&Ecirc;': u'\xca', '&raquo;': u'\xbb', '&eth;': u'\xf0', '&divide;': u'\xf7', '&atilde;': u'\xe3','&sup1;': u'\xb9', '&THORN;': u'\xde', '&ETH;': u'\xd0', '&frac34;': u'\xbe', '&nbsp;': u',', '&Auml;': u'\xc4', '&Ouml;': u'\xd6', '&Egrave;': u'\xc8', '&acute;': u'\xb4', '&Icirc;': u'\xce', '&deg;': u'\xb0', '&middot;': u'\xb7', '&ocirc;': u'\xf4', '&Ugrave;': u'\xd9', '&gt;': u'>', '&ordf;': u'\xaa', '&uml;': u'\xa8', '&aring;': u'\xe5', '&frac12;': u'\xbd', '&iexcl;': u'\xa1', '&frac14;': u'\xbc', '&Aacute;': u'\xc1', '&szlig;': u'\xdf', '&igrave;': u'\xec', '&aelig;': u'\xe6', '&yen;': u'\xa5', '&times;': u'\xd7', '&para;': u'\xb6', '&oacute;': u'\xf3', '&Igrave;': u'\xcc', '&ucirc;': u'\xfb', '&brvbar;': u'\xa6', '&micro;': u'\xb5', '&agrave;': u'\xe0', '&thorn;': u'\xfe', '&Ucirc;': u'\xdb', '&amp;': u'&', '&uuml;': u'\xfc', '&ecirc;': u'\xea', '&not;': u'\xac', '&Ograve;': u'\xd2', '&oslash;': u'\xf8', '&Uuml;': u'\xdc', '&cedil;': u'\xb8', '&plusmn;': u'\xb1', '&AElig;': u'\xc6', '&icirc;': u'\xee', '&auml;': u'\xe4', '&ouml;': u'\xf6', '&Ccedil;': u'\xc7', '&euml;': u'\xeb', '&lt;': u'<', '&iquest;': u'\xbf', '&eacute;': u'\xe9', '&ntilde;': u'\xf1', '&pound;': u'\xa3', '&Iuml;': u'\xcf', '&Eacute;': u'\xc9', '&Ntilde;': u'\xd1', '&euro;': u'\u20ac', '&sup2;': u'\xb2', '&Acirc;': u'\xc2', '&ccedil;': u'\xe7', '&Iacute;': u'\xcd', '&quot;': u'"', '&Aring;': u'\xc5', '&macr;': u'\xaf', '&ordm;': u'\xba', '&Oslash;': u'\xd8', '&Otilde;': u'\xd5', '&Ocirc;': u'\xd4', '&reg;': u'\xae', '&Yacute;': u'\xdd', '&iuml;': u'\xef', '&ugrave;': u'\xf9', '&sup3;': u'\xb3', '&curren;': u'\xa4', '&copy;': u'\xa9', '&Atilde;': u'\xc3', '&egrave;': u'\xe8', '&Euml;': u'\xcb', '&uacute;': u'\xfa', '&ograve;': u'\xf2', '&acirc;': u'\xe2', '&aacute;': u'\xe1', '&Agrave;': u'\xc0', '&Oacute;': u'\xd3', '&sect;': u'\xa7', '&yacute;': u'\xfd', '&iacute;': u'\xed', '&cent;': u'\xa2', '&Uacute;': u'\xda', '&otilde;': u'\xf5'}
@@ -258,13 +258,16 @@ class feed:
         
         #find encoding
         first_line=html[0:html.find('\n')]
-        print "1st line: ",first_line
+        #print "1st line: ",first_line
         
-        enc_s=first_line.find('encoding="')+10
+        
+        enc_s=first_line.find('encoding=')
         if enc_s!=-1:
-            enc_e=first_line[enc_s:].find('"')
+            enc_s+=10
+            quot=first_line[enc_s-1]
+            enc_e=first_line[enc_s:].find(quot)
             
-            print "enc_s=%d   enc_e=%d" % (enc_s,enc_e)
+            #print "enc_s=%d   enc_e=%d quot %s" % (enc_s,enc_e,quot)
             
             
             encoding=first_line[enc_s:enc_s+enc_e]
@@ -352,7 +355,7 @@ class global_db:
     def __init__(self):
         try:
             pkl_file = open("feed.dat", 'r')
-            sett = pickle.load(pkl_file)
+            sett = cPickle.load(pkl_file)
             pkl_file.close()
         except:
             return
@@ -364,10 +367,16 @@ class global_db:
         for i in sett:
             settings[i]=sett[i]
         
+        
+        #Default settings
         if 'show_read' not in settings:
             settings['show_read']=True
         if 'update_on_open' not in settings:
             settings['update_on_open']=False
+        if 'default_ap' not in settings:
+            settings['default_ap']='---None---'
+        if 'items_per_feed' not in settings:
+            settings['items_per_feed']=200
             
     def close(self):
         
@@ -381,7 +390,7 @@ class global_db:
         settings['feeds']=f
 
         # Pickle dictionary using protocol 0.
-        pickle.dump(settings, output)
+        cPickle.dump(settings, output)
 
         output.close()
         
@@ -502,6 +511,7 @@ def update_view():
         main_txt.set_pos(0)
         appuifw.app.body=main_txt
         
+            
 def open_in_browser():
     '''Opens the selected item in an external browser'''
     url=''
@@ -546,7 +556,6 @@ def update_all_feeds():
     update_view()
 
     
-
 def init_menu():
     appuifw.app.menu = [
         (u"Update all feeds", update_all_feeds),
@@ -573,18 +582,40 @@ def init_menu():
 def about():
     show_popup(u"RSS-agk by Salvo 'LtWorf' Tomaselli")
 
-def show_settings():
-    ap_list=[u'---None---']
+def associate_ap():
+    ap_id=None
     
     for i in btsocket.access_points():
+        if i['name']==settings['default_ap']:
+            ap_id=i['iapid']
+            break
+        
+    if ap_id==None:
+        return
+        
+    #ap_id=btsocket.select_access_point() #Selects the access point and returns its id
+    ap=btsocket.access_point(ap_id)      #Create the access point object
+    btsocket.set_default_access_point(ap)
+
+
+def show_settings():
+    ap_list=[u'---None---']
+    for i in btsocket.access_points():
         ap_list.append(i['name'])
+        
+    try:
+        ap_default=ap_list.index(settings['default_ap'])
+    except:
+        ap_default=0
+    
+    
     
     form=appuifw.Form(
         [
             (u'Show read Articles','combo', ([u'No', u'Yes'],int(settings['show_read']))),
-            (u'Default access point','combo', (ap_list,0)),
+            (u'Default access point','combo', (ap_list,ap_default)),
             (u'Update feeds on open','combo', ([u'No', u'Yes'],int(settings['update_on_open']))),
-            
+            (u'# items to store per feed','number',settings['items_per_feed'] ),
             #(u'txt','text', u'default'),
             #(u'number','number', 123),
             #(u'date','date'),
@@ -595,7 +626,7 @@ def show_settings():
     form.execute()
     
     settings['show_read']=bool(form[0][2][1])
-    #access point here TODO
+    settings['default_ap']=ap_list[form[1][2][1]]
     settings['update_on_open']=bool(form[2][2][1])
 
 #################################################### The order of those lines is IMPORTANT
@@ -603,9 +634,6 @@ def show_settings():
 feeds=[]
 settings={}
 
-ap_id=btsocket.select_access_point() #Selects the access point and returns its id
-ap=btsocket.access_point(ap_id)      #Create the access point object
-btsocket.set_default_access_point(ap)
 
 gvars=global_vars()
 gdb=global_db()
@@ -619,7 +647,7 @@ gdb=global_db()
 
 
 
-
+associate_ap()
 
 
 
@@ -644,6 +672,15 @@ init_menu()
 #(u"Remove feed", add_feed)))]
 
 appuifw.app.exit_key_handler = back_one_level
+
+
+
+#Stuff to do once the GUI is loaded
+if settings['update_on_open']:
+    update_all_feeds()
+
+
+
 
 # create an Active Object
 app_lock = e32.Ao_lock()
