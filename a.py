@@ -278,6 +278,8 @@ class feed:
         #Used to keep all the html which is not into items
         preitems=html[0:html.find('<item')]
         
+        items=[]
+        
         while html.find('<item')>=0:
             start_item=html.find('<item')
             end_start_item=html[start_item:].find('>')
@@ -287,7 +289,12 @@ class feed:
             #Moves to the next item
             html=html[start_item+end_item:] 
             #adds item
-            self.items.append(feed_item(item))
+            new_item=feed_item(item)
+            if new_item not in self.items:
+                items.append(new_item)
+        
+        #Merge items lists
+        self.items=items+self.items
         
         self.raw=preitems+html
         title=self._get_tag_content('title')
@@ -329,21 +336,26 @@ class feed:
         return u"%s (%d)" %(self.get_title(),self.get_unread())
 
 class global_vars:
+    
+    
     def __init__(self):
         self.current_feed=0
         self.current_article=0
         self.view_state=0 #0 is list of feeds, 1 is list of news and 2 is text of the new
 
 class global_db:
+    '''This class handles loading and storing all the data'''
+    
+    
     def __init__(self):
         try:
             pkl_file = open("feed.dat", 'r')
-            f = pickle.load(pkl_file)
+            settings = pickle.load(pkl_file)
             pkl_file.close()
         except:
             return
         
-        for i in f:
+        for i in settings['feeds']:
             feeds.append(feed(i))
         
     def close(self):
@@ -354,9 +366,11 @@ class global_db:
         
         '''Closes the db'''
         output = open("feed.dat", 'wb')
+        
+        settings['feeds']=f
 
         # Pickle dictionary using protocol 0.
-        pickle.dump(f, output)
+        pickle.dump(settings, output)
 
         output.close()
         
@@ -508,31 +522,73 @@ def mark_all_feeds_read():
             i.read=True
     update_view()
 
+def update_feed():
+    '''Updates the current feed'''
+    if len(feeds)==0: 
+        return
+    feeds[main_list.current()].update_feed()
+    update_view()
+
+def update_all_feeds():
+    for f in feeds:
+        f.update_feed()
+    update_view()
+
+    
+
 def init_menu():
-    appuifw.app.menu = [(u"Options",(
+    appuifw.app.menu = [
+        (u"Update all feeds", update_all_feeds),
         (u"View in browser", open_in_browser),
-        (u"Update feed", do_nothing),
-        (u"Update all feeds", do_nothing),
-        (u"Add feed", add_feed),
-        (u"Remove feed", remove_feed),
-        (u"Mark feed as read", mark_feed_read),
-        (u"Mark all feeds as read", mark_all_feeds_read),
+        
+        (u"Manage feeds",(
+        
+            (u"Update feed", update_feed),
+            (u"Add feed", add_feed),
+            (u"Remove feed", remove_feed),
+            (u"Mark feed as read", mark_feed_read),
+            (u"Mark all feeds as read", mark_all_feeds_read),
+            (u"Import feeds", do_nothing),
+            (u"Export feeds", do_nothing),
+        
+        )),
+        
+        (u"Settings",show_settings),
+        
         (u"About", about),
-        (u"Exit", exit_key_handler),
-        ))
+        (u"Exit", exit_key_handler)
     ]
 
 def about():
     show_popup(u"RSS-agk by Salvo 'LtWorf' Tomaselli")
 
-
-
-
-
+def show_settings():
+    ap_list=[u'---None---']
+    
+    for i in btsocket.access_points():
+        ap_list.append(i['name'])
+    
+    form=appuifw.Form(
+        [
+            
+            (u'Show read Articles','combo', ([u'Yes', u'No'],0)),
+            (u'Default access point','combo', (ap_list,0)),
+            
+            #(u'txt','text', u'default'),
+            #(u'number','number', 123),
+            #(u'date','date'),
+            #(u'time','time'),
+            
+        ],
+    
+    appuifw.FFormDoubleSpaced | appuifw.FFormEditModeOnly)
+    
+    form.execute()
 
 #################################################### The order of those lines is IMPORTANT
 
 feeds=[]
+settings={}
 
 ap_id=btsocket.select_access_point() #Selects the access point and returns its id
 ap=btsocket.access_point(ap_id)      #Create the access point object
