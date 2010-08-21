@@ -318,7 +318,9 @@ class feed:
         '''Returns a list of articles'''
         articles=[]
         for i in self.items:
-            
+            if settings['show_read']==False and i.read==True:
+                continue
+                
             #Cuts too long names
             if len(i.title)>30:
                 t=i.title[0:30]
@@ -350,14 +352,23 @@ class global_db:
     def __init__(self):
         try:
             pkl_file = open("feed.dat", 'r')
-            settings = pickle.load(pkl_file)
+            sett = pickle.load(pkl_file)
             pkl_file.close()
         except:
             return
         
-        for i in settings['feeds']:
+        for i in sett['feeds']:
             feeds.append(feed(i))
+        sett['feeds']=None #Releases since it's no longer in use
         
+        for i in sett:
+            settings[i]=sett[i]
+        
+        if 'show_read' not in settings:
+            settings['show_read']=True
+        if 'update_on_open' not in settings:
+            settings['update_on_open']=False
+            
     def close(self):
         
         f=[]
@@ -570,20 +581,22 @@ def show_settings():
     
     form=appuifw.Form(
         [
-            
-            (u'Show read Articles','combo', ([u'Yes', u'No'],0)),
+            (u'Show read Articles','combo', ([u'No', u'Yes'],int(settings['show_read']))),
             (u'Default access point','combo', (ap_list,0)),
+            (u'Update feeds on open','combo', ([u'No', u'Yes'],int(settings['update_on_open']))),
             
             #(u'txt','text', u'default'),
             #(u'number','number', 123),
             #(u'date','date'),
             #(u'time','time'),
-            
         ],
-    
     appuifw.FFormDoubleSpaced | appuifw.FFormEditModeOnly)
     
     form.execute()
+    
+    settings['show_read']=bool(form[0][2][1])
+    #access point here TODO
+    settings['update_on_open']=bool(form[2][2][1])
 
 #################################################### The order of those lines is IMPORTANT
 
