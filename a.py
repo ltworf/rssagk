@@ -206,6 +206,7 @@ class feed:
         a dictionary containing a stored feed object'''
         
         self.items=[]
+        self.id_map=None
         
         if isinstance(url,dict):
             self.url=url['url']
@@ -299,6 +300,8 @@ class feed:
         #Merge items lists
         self.items=items+self.items
         
+        #TODO delete items if they exceed       settings['items_per_feed']
+        
         self.raw=preitems+html
         title=self._get_tag_content('title')
         if title!='':
@@ -320,24 +323,33 @@ class feed:
     def get_articles(self):
         '''Returns a list of articles'''
         articles=[]
-        for i in self.items:
-            if settings['show_read']==False and i.read==True:
+        self.id_map=[]
+        for i in range(len(self.items)):
+            if settings['show_read']==False and self.items[i].read==True:
                 continue
                 
             #Cuts too long names
-            if len(i.title)>30:
-                t=i.title[0:30]
+            if len(self.items[i].title)>settings['chars_per_line']:
+                t=self.items[i].title[0:settings['chars_per_line']]
             else:
-                t=i.title
+                t=self.items[i].title
                 
             #Adds a trailing * for unread articles
-            if i.read==False:
-                t='*%s'%t
+            if self.items[i].read==False:
+                t=u'*%s'%t
+                
+            self.id_map.append(i) #Real index of the item
             articles.append(t)
         if len(articles)==0:
             articles.append(u'No items...')
         return articles
     def __str__(self):
+        
+        #TODO if len(self.items[i].title)>settings['chars_per_line']:
+        #        t=self.items[i].title[0:settings['chars_per_line']]
+        #    else:
+        #        t=self.items[i].title
+                
         return u"%s (%d)" %(self.get_title(),self.get_unread())
 
 class global_vars:
@@ -377,6 +389,8 @@ class global_db:
             settings['default_ap']='---None---'
         if 'items_per_feed' not in settings:
             settings['items_per_feed']=200
+        if 'chars_per_line' not in settings:
+            settings['chars_per_line']=40
             
     def close(self):
         
@@ -446,7 +460,7 @@ def list_click():
         pass #There is only a placeholder item that shows that there aren't items
     elif gvars.view_state==1: #Goes to state 2 to read the article
         gvars.current_article=main_list.current() #Sets the index for the current article
-        feeds[gvars.current_feed].items[gvars.current_article].read=True #Marks the article as read
+        feeds[gvars.current_feed].items[feeds[gvars.current_feed].id_map[gvars.current_article]].read=True #Marks the article as read
         gvars.view_state=2
         update_view()
 #    elif gvars.view_state==2:
@@ -503,7 +517,7 @@ def update_view():
         main_list.set_list(feeds[gvars.current_feed].get_articles())
         appuifw.app.body=main_list #Sets this in case we are coming back from state 2
     elif gvars.view_state==2:
-        article=feeds[gvars.current_feed].items[gvars.current_article]
+        article=feeds[gvars.current_feed].items[feeds[gvars.current_feed].id_map[gvars.current_article]]
         #self.source=self._get_tag_content('source')        
         #self.link=self._get_tag_content('link')        
         #self.guid=self._get_tag_content('guid')
@@ -519,7 +533,7 @@ def open_in_browser():
     if gvars.view_state==0 and len(feeds)>0: 
         url=feeds[main_list.current()].link
     elif (gvars.view_state==1 and len(feeds[gvars.current_feed].items)>0) or gvars.view_state==2:
-        article=feeds[gvars.current_feed].items[gvars.current_article]
+        article=feeds[gvars.current_feed].items[feeds[gvars.current_feed].id_map[gvars.current_article]]
         url=article.link
         article.read=True #Marks the article as read, even if viewed externally
         if gvars.view_state==1: update_view() #Updates view in case we are listing the articles
@@ -609,13 +623,13 @@ def show_settings():
         ap_default=0
     
     
-    
     form=appuifw.Form(
         [
             (u'Show read Articles','combo', ([u'No', u'Yes'],int(settings['show_read']))),
             (u'Default access point','combo', (ap_list,ap_default)),
             (u'Update feeds on open','combo', ([u'No', u'Yes'],int(settings['update_on_open']))),
-            (u'# items to store per feed','number',settings['items_per_feed'] ),
+            (u'Items to store per feed','number',settings['items_per_feed']),
+            (u'Max chars per line','number',settings['chars_per_line']),
             #(u'txt','text', u'default'),
             #(u'number','number', 123),
             #(u'date','date'),
@@ -628,6 +642,8 @@ def show_settings():
     settings['show_read']=bool(form[0][2][1])
     settings['default_ap']=ap_list[form[1][2][1]]
     settings['update_on_open']=bool(form[2][2][1])
+    settings['items_per_feed']=int(form[3][2])
+    settings['chars_per_line']=int(form[4][2])
 
 #################################################### The order of those lines is IMPORTANT
 
