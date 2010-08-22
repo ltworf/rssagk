@@ -300,7 +300,9 @@ class feed:
         #Merge items lists
         self.items=items+self.items
         
-        #TODO delete items if they exceed       settings['items_per_feed']
+        #Deletes exceeding items
+        if len(self.items)> settings['items_per_feed']:
+            self.items=self.items[:settings['items_per_feed']]
         
         self.raw=preitems+html
         title=self._get_tag_content('title')
@@ -315,10 +317,6 @@ class feed:
             if i.read==False:
                 count+=1
         return count
-        
-    def get_title(self):
-        '''Returns the title of the feed'''
-        return self.title
         
     def get_articles(self):
         '''Returns a list of articles'''
@@ -344,13 +342,14 @@ class feed:
             articles.append(u'No items...')
         return articles
     def __str__(self):
+        strcount=u' (%d)' % self.get_unread()
         
-        #TODO if len(self.items[i].title)>settings['chars_per_line']:
-        #        t=self.items[i].title[0:settings['chars_per_line']]
-        #    else:
-        #        t=self.items[i].title
+        if len(self.title)+len(strcount)>settings['chars_per_line']:
+            t=self.title[0:settings['chars_per_line'] - len(strcount)]
+        else:
+            t=self.title
                 
-        return u"%s (%d)" %(self.get_title(),self.get_unread())
+        return u"%s%s" %(t,strcount)
 
 class global_vars:
     
@@ -390,7 +389,7 @@ class global_db:
         if 'items_per_feed' not in settings:
             settings['items_per_feed']=200
         if 'chars_per_line' not in settings:
-            settings['chars_per_line']=40
+            settings['chars_per_line']=31
             
     def close(self):
         
