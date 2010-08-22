@@ -27,6 +27,7 @@ import cPickle
 
 html_escape_repl={'&Ecirc;': u'\xca', '&raquo;': u'\xbb', '&eth;': u'\xf0', '&divide;': u'\xf7', '&atilde;': u'\xe3','&sup1;': u'\xb9', '&THORN;': u'\xde', '&ETH;': u'\xd0', '&frac34;': u'\xbe', '&nbsp;': u',', '&Auml;': u'\xc4', '&Ouml;': u'\xd6', '&Egrave;': u'\xc8', '&acute;': u'\xb4', '&Icirc;': u'\xce', '&deg;': u'\xb0', '&middot;': u'\xb7', '&ocirc;': u'\xf4', '&Ugrave;': u'\xd9', '&gt;': u'>', '&ordf;': u'\xaa', '&uml;': u'\xa8', '&aring;': u'\xe5', '&frac12;': u'\xbd', '&iexcl;': u'\xa1', '&frac14;': u'\xbc', '&Aacute;': u'\xc1', '&szlig;': u'\xdf', '&igrave;': u'\xec', '&aelig;': u'\xe6', '&yen;': u'\xa5', '&times;': u'\xd7', '&para;': u'\xb6', '&oacute;': u'\xf3', '&Igrave;': u'\xcc', '&ucirc;': u'\xfb', '&brvbar;': u'\xa6', '&micro;': u'\xb5', '&agrave;': u'\xe0', '&thorn;': u'\xfe', '&Ucirc;': u'\xdb', '&amp;': u'&', '&uuml;': u'\xfc', '&ecirc;': u'\xea', '&not;': u'\xac', '&Ograve;': u'\xd2', '&oslash;': u'\xf8', '&Uuml;': u'\xdc', '&cedil;': u'\xb8', '&plusmn;': u'\xb1', '&AElig;': u'\xc6', '&icirc;': u'\xee', '&auml;': u'\xe4', '&ouml;': u'\xf6', '&Ccedil;': u'\xc7', '&euml;': u'\xeb', '&lt;': u'<', '&iquest;': u'\xbf', '&eacute;': u'\xe9', '&ntilde;': u'\xf1', '&pound;': u'\xa3', '&Iuml;': u'\xcf', '&Eacute;': u'\xc9', '&Ntilde;': u'\xd1', '&euro;': u'\u20ac', '&sup2;': u'\xb2', '&Acirc;': u'\xc2', '&ccedil;': u'\xe7', '&Iacute;': u'\xcd', '&quot;': u'"', '&Aring;': u'\xc5', '&macr;': u'\xaf', '&ordm;': u'\xba', '&Oslash;': u'\xd8', '&Otilde;': u'\xd5', '&Ocirc;': u'\xd4', '&reg;': u'\xae', '&Yacute;': u'\xdd', '&iuml;': u'\xef', '&ugrave;': u'\xf9', '&sup3;': u'\xb3', '&curren;': u'\xa4', '&copy;': u'\xa9', '&Atilde;': u'\xc3', '&egrave;': u'\xe8', '&Euml;': u'\xcb', '&uacute;': u'\xfa', '&ograve;': u'\xf2', '&acirc;': u'\xe2', '&aacute;': u'\xe1', '&Agrave;': u'\xc0', '&Oacute;': u'\xd3', '&sect;': u'\xa7', '&yacute;': u'\xfd', '&iacute;': u'\xed', '&cent;': u'\xa2', '&Uacute;': u'\xda', '&otilde;': u'\xf5'}
 
+
 def wget(url,ap_id=None):
     '''Downloads a web resource with the HTTP protocol
     and returns the result
@@ -69,7 +70,6 @@ def wget(url,ap_id=None):
     sock.connect((host,port))
     sock.send("GET %s HTTP/1.1\r\nConnection: close\r\nHost: %s\r\nUser-Agent: RSS-agk\r\n\r\n" % (get,hname))
     
-    
     data=''
     while True:
         r=sock.read(4000)
@@ -77,15 +77,11 @@ def wget(url,ap_id=None):
             break
         data+=r
     
-    
     sock.close()
 
-    #Release access point
-    #ap.stop()
-    
     #TODO Server didn't return ok
     if data[9:12]!='200':
-        show_popup(u'Server returned %s instead of 200' % data[9:12])
+        appuifw.note(u'Server returned %s instead of 200' % data[9:12], "info")
         return None
     
     return data.split('\r\n\r\n',1)[1]
@@ -145,31 +141,8 @@ class feed_item:
         d['link']=self.link
         d['guid']=self.guid
         return d
-        
-    def _de_html(self,data):
-        if data==None:
-            return None
-            
-        #Removing the CDATA tag around the description
-        if data.startswith('<![CDATA[') and data.endswith(']]>'):
-            data=data[9:-3]
-        
-        #Replacing some tags into text
-        data=data.replace('<br>','\n')
-        data=data.replace('<br/>','\n')
-        data=data.replace('<br />','\n')
-        data=data.replace('<hr>','---')
-        data=data.replace('<hr/>','---')
-        data=data.replace('<hr />','---')
-        data=data.replace('</p>','</p>\n')
-        
-        #Removing tags and using their text
-        while data.find('<')!=-1:
-            s=data.find('<')
-            e=data.find('>')
-            data=data[0:s] + data[e+1:]
-
-        
+    
+    def _replace_html_escape(self,data):
         for i in html_escape_repl.keys():
             data=data.replace(i,html_escape_repl[i])
 
@@ -181,6 +154,38 @@ class feed_item:
                 break
             code=data[s:s+e].strip()
             data=data[0:s-2] + unichr(int(code)) + data[s+e+1:]
+        return data
+    
+    def _de_html(self,data):
+        if data==None:
+            return None
+            
+        #Removing the CDATA tag around the description
+        if data.startswith('<![CDATA[') and data.endswith(']]>'):
+            data=data[9:-3]
+        
+        data=self._replace_html_escape(data)
+        
+        #Replacing some tags into text
+        data=data.replace('<br>','\n')
+        data=data.replace('<br/>','\n')
+        data=data.replace('<br />','\n')
+        data=data.replace('<hr>','---')
+        data=data.replace('<hr/>','---')
+        data=data.replace('<hr />','---')
+        data=data.replace('</p>','</p>\n')
+        
+        #Removing tags and using their text
+        #Since some damn feeds use to escape them, then it is impossible to determine which one
+        #is text and which one is tag. Bah
+        while data.find('<')!=-1:
+            s=data.find('<')
+            e=data.find('>')
+            if e!=-1 and e>s:
+                data=data[0:s] + data[e+1:]
+
+        data=self._replace_html_escape(data)
+        
         return data
         
     def _get_tag_content(self,tag):
@@ -251,7 +256,7 @@ class feed:
             return
 
         if html==None or html=='':
-            show_popup(u"Unable to fetch the feed %s"%self.title)
+            appuifw.note(u"Unable to fetch the feed %s"%self.title, "info")
             return
         
         #some servers appear to send some junk before the actual XML
@@ -259,7 +264,7 @@ class feed:
         
         #find encoding
         first_line=html[0:html.find('\n')]
-        #print "1st line: ",first_line
+        print "1st line: ",first_line
         
         
         enc_s=first_line.find('encoding=')
@@ -268,10 +273,8 @@ class feed:
             quot=first_line[enc_s-1]
             enc_e=first_line[enc_s:].find(quot)
             
-            #print "enc_s=%d   enc_e=%d quot %s" % (enc_s,enc_e,quot)
-            
-            
             encoding=first_line[enc_s:enc_s+enc_e]
+            print "enc_s=%d   enc_e=%d quot %s encoding %s" % (enc_s,enc_e,quot,encoding)
             
             try:
                 html=unicode(html,encoding)#html.decode(encoding)
@@ -433,9 +436,6 @@ def do_nothing():
     '''This function does nothing'''
     pass
 
-def show_popup(text):
-    appuifw.note(text, "info")
-
 def exit_key_handler():
     '''Exits the application'''
     gdb.close() #Closes the database
@@ -455,7 +455,7 @@ def list_click():
         update_view()
     elif gvars.view_state==0 and len(feeds)==0:
         add_feed()
-    elif gvars.view_state==1 and len(feeds[gvars.current_feed].items)==0:
+    elif gvars.view_state==1 and len(feeds[gvars.current_feed].id_map)==0:
         pass #There is only a placeholder item that shows that there aren't items
     elif gvars.view_state==1: #Goes to state 2 to read the article
         gvars.current_article=main_list.current() #Sets the index for the current article
@@ -484,7 +484,7 @@ def add_feed():
     #Doesn't add existing feeds    
     for i in feeds:
         if i.url==uri:
-            show_popup(u'Feed already imported')
+            appuifw.note(u'Feed already imported', "info")
             return
     try:
         new_feed=feed(uri)
@@ -492,7 +492,7 @@ def add_feed():
         gdb.add_feed(new_feed)
         update_view()
     except:
-        show_popup(u'Unable to insert the feed')
+        appuifw.note(u'Unable to insert the feed', "info")
         
 def remove_feed():
     if gvars.view_state==0:
@@ -506,7 +506,7 @@ def remove_feed():
         feeds.pop(index)
         update_view()
     except:
-        show_popup(u'Unable to remove the feed')
+        appuifw.note(u'Unable to remove the feed', "info")
 
 def update_view():
     '''Updates the current view, depending on the current view state'''
@@ -531,7 +531,7 @@ def open_in_browser():
     
     if gvars.view_state==0 and len(feeds)>0: 
         url=feeds[main_list.current()].link
-    elif (gvars.view_state==1 and len(feeds[gvars.current_feed].items)>0) or gvars.view_state==2:
+    elif (gvars.view_state==1 and len(feeds[gvars.current_feed].id_map)>0) or gvars.view_state==2:
         article=feeds[gvars.current_feed].items[feeds[gvars.current_feed].id_map[gvars.current_article]]
         url=article.link
         article.read=True #Marks the article as read, even if viewed externally
@@ -540,7 +540,7 @@ def open_in_browser():
     if url!='':
         open_link(url)
     else:
-        show_popup(u'Item doesn\'t provide any link')
+        appuifw.note(u'Item doesn\'t provide any link', "info")
 
 def mark_feed_read():
     '''Marks the current feed as read'''
@@ -593,7 +593,7 @@ def init_menu():
     ]
 
 def about():
-    show_popup(u"RSS-agk by Salvo 'LtWorf' Tomaselli")
+    appuifw.note(u"RSS-agk by Salvo 'LtWorf' Tomaselli", "info")
 
 def associate_ap():
     ap_id=None
@@ -602,11 +602,17 @@ def associate_ap():
         if i['name']==settings['default_ap']:
             ap_id=i['iapid']
             break
-        
+    
+    
+    #Selects a default ap now, without saving the choice in the settings
+    if ap_id==None:
+        ap_id=btsocket.select_access_point() #Selects the access point and returns its id
+    
+    #If still no ap was selected, return
     if ap_id==None:
         return
         
-    #ap_id=btsocket.select_access_point() #Selects the access point and returns its id
+    
     ap=btsocket.access_point(ap_id)      #Create the access point object
     btsocket.set_default_access_point(ap)
 
@@ -676,25 +682,17 @@ app.screen='normal'
 main_list = appuifw.Listbox(get_feeds_entries(),list_click)
 main_txt = appuifw.Text()
 
-# create an instance of appuifw.Listbox(), include the content list "entries" and the callback function "shout"
-# and set the instance of Listbox now as the application body
+# Sets the list as body of the app
 appuifw.app.body = main_list
 
 init_menu()
 
-#appuifw.app.menu = [(u"Options", add_feed),(u"Submenu 1",
-#((u"Add feed", add_feed),
-#(u"Remove feed", add_feed)))]
-
 appuifw.app.exit_key_handler = back_one_level
-
 
 
 #Stuff to do once the GUI is loaded
 if settings['update_on_open']:
     update_all_feeds()
-
-
 
 
 # create an Active Object
