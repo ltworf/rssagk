@@ -109,7 +109,6 @@ class feed_item:
         
         self.read=False
         self.title=self._get_tag_content('title')
-        self.description=self._get_tag_content('description')
         self.author=self._get_tag_content('author')
         self.category=self._get_tag_content('category')
         self.comments=self._get_tag_content('comments')
@@ -118,6 +117,14 @@ class feed_item:
         self.source=self._get_tag_content('source')        
         self.link=self._get_tag_content('link')        
         self.guid=self._get_tag_content('guid')
+        
+        
+        #For descrpition check if there is a full content also, and use that one in case
+        content=self._get_tag_content('content:encoded')
+        if len(content)==0:
+            self.description=self._get_tag_content('description')
+        else:
+            self.description=content
         
         #Setting link for the item
         if self.link == None and self.guid!=None and self.raw.find('guid isPermaLink="true"')>=0:
@@ -155,8 +162,27 @@ class feed_item:
             code=data[s:s+e].strip()
             data=data[0:s-2] + unichr(int(code)) + data[s+e+1:]
         return data
+
+    @staticmethod
+    def remove_tag(data,tag):
+        '''Removes all occourrences of a tag and it's content'''
+        
+        tpos=data.rfind('<%s' % tag)
+        
+        while tpos!=-1:
+            lpos=data[tpos:].find('</%s>'%tag)+tpos
+            if lpos!=tpos-1:
+                data= data[0:tpos]+data[lpos+len(tag)+3:]
+            elif data[tpos+len(tag)+1]=='/':
+                data= data[0:tpos]+data[tpos+len(tag)+3:]
+                #print tpos, data[tpos+len(tag)+1:];
+                
+            tpos=data.rfind('<%s' % tag)
+        return data
+
     
     def _de_html(self,data):
+        '''Converts the html into pure text'''
         if data==None:
             return None
             
@@ -164,6 +190,16 @@ class feed_item:
         if data.startswith('<![CDATA[') and data.endswith(']]>'):
             data=data[9:-3]
         
+        #Removes known tags and their content
+        data=self.remove_tag(data,'script')
+        
+        #Removes redoundant spaces and \n
+        data=data.replace("\n","")
+        while data.find('  ')!=-1:
+            data=data.replace("  "," ")
+        
+        
+        #Replacing escapes
         data=self._replace_html_escape(data)
         
         #Replacing some tags into text
@@ -173,7 +209,7 @@ class feed_item:
         data=data.replace('<hr>','---')
         data=data.replace('<hr/>','---')
         data=data.replace('<hr />','---')
-        data=data.replace('</p>','</p>\n')
+        data=data.replace('</p>','</p>\n') #And then the <p>text</p> will be replaced with text
         
         #Removing tags and using their text
         #Since some damn feeds use to escape them, then it is impossible to determine which one
