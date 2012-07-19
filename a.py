@@ -198,7 +198,6 @@ class feed_item:
         while data.find('  ')!=-1:
             data=data.replace("  "," ")
         
-        
         #Replacing escapes
         data=self._replace_html_escape(data)
         
@@ -396,13 +395,16 @@ class global_vars:
     def __init__(self):
         self.current_feed=0
         self.current_article=0
-        self.view_state=0 #0 is list of feeds, 1 is list of news and 2 is text of the new
+        self.view_state=0 #0 is list of feeds, 1 is list of news and 2 is text of the new 3 is for other text
+        self.prev_state=0 #Previous state before going to state 3
 
 class global_db:
     '''This class handles loading and storing all the data'''
     
     
     def __init__(self):
+        appuifw.note(u'Loading data...', "info")
+        
         try:
             pkl_file = open("feed.dat", 'r')
             sett = cPickle.load(pkl_file)
@@ -600,8 +602,13 @@ def update_feed():
     update_view()
 
 def update_all_feeds():
+    total=len(feeds)
+    count=1
+    
     for f in feeds:
+        #appuifw.note(u'Updating feeds %d of %d' % (count,total), "info")
         f.update_feed()
+        count+=1
     update_view()
 
     
@@ -648,7 +655,6 @@ def associate_ap():
     if ap_id==None:
         return
         
-    
     ap=btsocket.access_point(ap_id)      #Create the access point object
     btsocket.set_default_access_point(ap)
 
@@ -688,6 +694,11 @@ def show_settings():
 
 #################################################### The order of those lines is IMPORTANT
 
+app=appuifw.app
+app.title=u"RSS-agk"
+app.screen='normal'
+
+
 feeds=[]
 settings={}
 
@@ -706,12 +717,6 @@ gdb=global_db()
 
 associate_ap()
 
-
-
-
-app=appuifw.app
-app.title=u"RSS-agk"
-app.screen='normal'
 
 
 # create your content list of your listbox including the icons to be used for each entry
